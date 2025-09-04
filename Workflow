@@ -1,0 +1,373 @@
+{
+  "name": "marketing_campaign",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        -752,
+        -320
+      ],
+      "id": "cf0792ff-fdbf-4260-8461-b19aa442e40e",
+      "name": "Daily Schedule"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1nM9oYLCxHjTxwsytKtpAdcXiHijVSuXTUTEaCdFcmJE",
+          "mode": "list",
+          "cachedResultName": "campaign_log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nM9oYLCxHjTxwsytKtpAdcXiHijVSuXTUTEaCdFcmJE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 111240103,
+          "mode": "list",
+          "cachedResultName": "Sheet2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nM9oYLCxHjTxwsytKtpAdcXiHijVSuXTUTEaCdFcmJE/edit#gid=111240103"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "email": "{{ $json.email }}",
+            "date": "{{ $json.date }}",
+            "segment": "{{ $json.segment }}",
+            "content": "{{ $json.content }}"
+          },
+          "matchingColumns": [
+            "email"
+          ],
+          "schema": [
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "segment",
+              "displayName": "segment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "content",
+              "displayName": "content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -528,
+        -320
+      ],
+      "id": "d540ac82-31fa-4ab9-a2b0-0906a1d6c371",
+      "name": "Fetch CRM Data",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "veihqd0uhNIipEpl",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('CRM Data:', $json);\nconst items = $items();\nif (!items.length) {\n  console.log('No CRM data found');\n  return [{ name: 'No Customer', email: 'olatunjiayokanmi@gmail.com', last_purchase: '2025-08-01', segment: 'inactive' }];\n}\nreturn items.map(item => {\n  const lastPurchase = new Date(item.json.last_purchase || '2025-08-01');\n  const today = new Date();\n  const daysSincePurchase = Math.floor((today - lastPurchase) / (1000 * 60 * 60 * 24));\n  const segment = daysSincePurchase <= 30 ? 'high-value' : 'inactive';\n  return {\n    name: item.json.name || 'Customer',\n    email: item.json.email || 'olatunjiayokanmi@gmail.com',\n    last_purchase: item.json.last_purchase || '2025-08-01',\n    segment\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -304,
+        -320
+      ],
+      "id": "4ff30f47-83c5-4008-9fcb-cc998a4dee2b",
+      "name": "Segment Customers"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "Generate a personalized marketing email for a {{ $json.segment }} customer named {{ $json.name }}. Include a greeting, a product offer (e.g., 10% off ShopWise electronics), and a call-to-action. Return JSON with 'subject' and 'content'. Keep it concise, professional, and aligned with ShopWise branding.\n\nExample:\n{\n  \"subject\": \"Exclusive Offer for You, [Name]!\",\n  \"content\": \"Dear [Name],\\n\\nAs a valued customer, enjoy 10% off ShopWise electronics this week! Shop now: shopwise.com\\n\\nBest,\\nShopWise Team\"\n}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        -80,
+        -320
+      ],
+      "id": "fe7de6f0-e9e7-4a84-929b-84841b4cfa7f",
+      "name": "Generate Email Content"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-3.5-turbo",
+        "options": {
+          "temperature": 0.7
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        64,
+        -416
+      ],
+      "id": "ffc23e70-544d-4598-a14c-2976b5b0f915",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "eBy7jVgaqA8GZ3aF",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('Email Generation Input:', $json);\nconst out = $items()[0].json || {};\nlet emailData = {};\nif (out.generated_text) {\n  try {\n    emailData = JSON.parse(out.generated_text);\n  } catch (e) {\n    console.log('JSON Parse Error:', e.message);\n    emailData = {\n      subject: 'Exclusive Offer from ShopWise!',\n      content: `Dear ${$json.name || 'Customer'},\\n\\nEnjoy 10% off ShopWise electronics this week! Shop now: shopwise.com\\n\\nBest,\\nShopWise Team`\n    };\n  }\n} else {\n  emailData = {\n    subject: out.subject || 'Exclusive Offer from ShopWise!',\n    content: out.content || `Dear ${$json.name || 'Customer'},\\n\\nEnjoy 10% off ShopWise electronics this week! Shop now: shopwise.com\\n\\nBest,\\nShopWise Team`\n  };\n}\nreturn [{\n  name: $json.name,\n  email: $json.email,\n  segment: $json.segment,\n  subject: emailData.subject,\n  content: emailData.content,\n  date: new Date().toISOString()\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        -96
+      ],
+      "id": "8ea82b46-c663-4d7b-8bc5-03fba1f1b0b8",
+      "name": "Parse Email Content"
+    },
+    {
+      "parameters": {
+        "sendTo": "Olatunjiayokanmi@gmail.com",
+        "subject": "={{$json.subject}}",
+        "message": "={{$json.content}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        336,
+        -96
+      ],
+      "id": "0bc1f433-501a-4214-8400-e02a6b765892",
+      "name": "Send Campaign Email",
+      "webhookId": "f9fd655d-316e-47f3-9f14-cc5b7b4dcea2",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Z9fEx9ohun31faSZ",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1nM9oYLCxHjTxwsytKtpAdcXiHijVSuXTUTEaCdFcmJE",
+          "mode": "list",
+          "cachedResultName": "campaign_log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nM9oYLCxHjTxwsytKtpAdcXiHijVSuXTUTEaCdFcmJE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nM9oYLCxHjTxwsytKtpAdcXiHijVSuXTUTEaCdFcmJE/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "email": "={{ $json.email || 'No email' }}",
+            "segment": "={{ $json.segment || 'unknown' }}",
+            "name": "={{ $json.name }}",
+            "last_purchase": "={{ $json.last_purchase }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_purchase",
+              "displayName": "last_purchase",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "segment",
+              "displayName": "segment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        336,
+        -336
+      ],
+      "id": "aebcc39a-a827-41d8-9c95-044593a46a34",
+      "name": "Log Campaign",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "veihqd0uhNIipEpl",
+          "name": "Google Sheets account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Daily Schedule": {
+      "main": [
+        [
+          {
+            "node": "Fetch CRM Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch CRM Data": {
+      "main": [
+        [
+          {
+            "node": "Segment Customers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Segment Customers": {
+      "main": [
+        [
+          {
+            "node": "Generate Email Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Email Content",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Email Content": {
+      "main": [
+        [
+          {
+            "node": "Parse Email Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Email Content": {
+      "main": [
+        [
+          {
+            "node": "Send Campaign Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Campaign Email": {
+      "main": [
+        [
+          {
+            "node": "Log Campaign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c7fbfebf-d3aa-497f-90eb-c24d94653401",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f22802acada8548dd1b5acb0c915b7891cad4163960c330ed7c0c492d5d92552"
+  },
+  "id": "ai4ZOiL7JUSOlc5z",
+  "tags": []
+}
